@@ -2,14 +2,14 @@ import { CreateProductOrderController } from "../../src/controllers/CreateProduc
 import { InfrastructureError } from "../../src/InfrastructureError";
 import type { CreateProductOrderDTO } from "../../src/usecases/CreateProductOrderUsecase";
 
-describe('Testing CreateProductOrderController', () => {
+describe("Testing CreateProductOrderController", () => {
 
-    test('should create a product order successfully', async () => {
+    test("should create a product order successfully", async () => {
+
         const requestMock: any = {
             body: {
-                barcode: '123456',
-                orderQuantity: 10,
-                orderDate: '2026-06-20T10:00:00Z'
+                productBarcode: "123456",
+                orderQuantity: 10
             }
         };
 
@@ -27,31 +27,30 @@ describe('Testing CreateProductOrderController', () => {
         };
 
         class CreateProductOrderUseCaseMock {
-            execute(barcode: string, orderQuantity: number, orderDate: Date): CreateProductOrderDTO | Error {
-                return { 
-                    id: "random-uuid", 
-                    productBarcode: "123456", 
-                    orderQuantity: 10, 
-                    orderDate: new Date('2026-06-20T10:00:00Z')
+            execute(productBarcode: string, orderQuantity: number, orderDate: Date): CreateProductOrderDTO | Error {
+                return {
+                    id: "random-uuid",
+                    productBarcode,
+                    orderQuantity,
+                    orderDate
                 };
             }
         }
 
-        const createProductOrderUseCaseMock = new CreateProductOrderUseCaseMock() as any;
-        const createProductOrderController = new CreateProductOrderController(createProductOrderUseCaseMock);
+        const useCase = new CreateProductOrderUseCaseMock() as any;
+        const controller = new CreateProductOrderController(useCase);
 
-        await createProductOrderController.handle(requestMock, responseMock);
+        await controller.handle(requestMock, responseMock);
 
         expect(responseMock.statusCode).toBe(201);
-        expect(responseMock.data).toEqual({ 
-            id: "random-uuid", 
-            productBarcode: "123456", 
-            orderQuantity: 10, 
-            orderDate: new Date('2026-06-20T10:00:00Z')
-        });
+        expect(responseMock.data.id).toBe("random-uuid");
+        expect(responseMock.data.productBarcode).toBe("123456");
+        expect(responseMock.data.orderQuantity).toBe(10);
+        expect(responseMock.data.orderDate).toBeInstanceOf(Date);
     });
 
-    test('should return an error 400 if the body is not present', async () => {
+    test("should return status 400 if request body is undefined", async () => {
+
         const requestMock: any = {};
 
         const responseMock: any = {
@@ -68,26 +67,64 @@ describe('Testing CreateProductOrderController', () => {
         };
 
         class CreateProductOrderUseCaseMock {
-            execute(barcode: string, orderQuantity: number, orderDate: Date): CreateProductOrderDTO | Error {
-                return { id: "123", productBarcode: "123456", orderQuantity: 10, orderDate: new Date() };
+            execute(): CreateProductOrderDTO | Error {
+                throw new Error("Should not be called");
             }
         }
 
-        const createProductOrderUseCaseMock = new CreateProductOrderUseCaseMock() as any;
-        const createProductOrderController = new CreateProductOrderController(createProductOrderUseCaseMock);
+        const useCase = new CreateProductOrderUseCaseMock() as any;
+        const controller = new CreateProductOrderController(useCase);
 
-        await createProductOrderController.handle(requestMock, responseMock);
+        await controller.handle(requestMock, responseMock);
 
         expect(responseMock.statusCode).toBe(400);
-        expect(responseMock.data).toEqual({ error: "Invalid request body" });
+        expect(responseMock.data).toEqual({
+            error: "Invalid request body"
+        });
     });
 
-    test('should return an error 500 if receive an InfrastructureError from usecase', async () => {
+    test("should return status 400 if request body is not an object", async () => {
+
+        const requestMock: any = {
+            body: "invalid body"
+        };
+
+        const responseMock: any = {
+            statusCode: 0,
+            data: null,
+            status(code: number) {
+                this.statusCode = code;
+                return this;
+            },
+            send(data: any) {
+                this.data = data;
+                return this;
+            }
+        };
+
+        class CreateProductOrderUseCaseMock {
+            execute(): CreateProductOrderDTO | Error {
+                throw new Error("Should not be called");
+            }
+        }
+
+        const useCase = new CreateProductOrderUseCaseMock() as any;
+        const controller = new CreateProductOrderController(useCase);
+
+        await controller.handle(requestMock, responseMock);
+
+        expect(responseMock.statusCode).toBe(400);
+        expect(responseMock.data).toEqual({
+            error: "Invalid request body"
+        });
+    });
+
+    test("should return status 500 if usecase returns InfrastructureError", async () => {
+
         const requestMock: any = {
             body: {
-                barcode: '123456',
-                orderQuantity: 10,
-                orderDate: '2026-06-20T10:00:00Z'
+                productBarcode: "123456",
+                orderQuantity: 10
             }
         };
 
@@ -105,26 +142,28 @@ describe('Testing CreateProductOrderController', () => {
         };
 
         class CreateProductOrderUseCaseMock {
-            execute(barcode: string, orderQuantity: number, orderDate: Date): CreateProductOrderDTO | Error {
+            execute(): CreateProductOrderDTO | Error {
                 return new InfrastructureError("Database connection failed");
             }
         }
 
-        const createProductOrderUseCaseMock = new CreateProductOrderUseCaseMock() as any;
-        const createProductOrderController = new CreateProductOrderController(createProductOrderUseCaseMock);
+        const useCase = new CreateProductOrderUseCaseMock() as any;
+        const controller = new CreateProductOrderController(useCase);
 
-        await createProductOrderController.handle(requestMock, responseMock);
+        await controller.handle(requestMock, responseMock);
 
         expect(responseMock.statusCode).toBe(500);
-        expect(responseMock.data).toEqual({ error: "Database connection failed" });
+        expect(responseMock.data).toEqual({
+            error: "Database connection failed"
+        });
     });
 
-    test('should return an error 400 if receive an Error from usecase', async () => {
+    test("should return status 400 if usecase returns Error", async () => {
+
         const requestMock: any = {
             body: {
-                barcode: '123456',
-                orderQuantity: -5,
-                orderDate: '2026-06-20T10:00:00Z'
+                productBarcode: "123456",
+                orderQuantity: -5
             }
         };
 
@@ -142,17 +181,20 @@ describe('Testing CreateProductOrderController', () => {
         };
 
         class CreateProductOrderUseCaseMock {
-            execute(barcode: string, orderQuantity: number, orderDate: Date): CreateProductOrderDTO | Error {
+            execute(): CreateProductOrderDTO | Error {
                 return new Error("A quantidade do pedido deve ser maior que zero.");
             }
         }
 
-        const createProductOrderUseCaseMock = new CreateProductOrderUseCaseMock() as any;
-        const createProductOrderController = new CreateProductOrderController(createProductOrderUseCaseMock);
+        const useCase = new CreateProductOrderUseCaseMock() as any;
+        const controller = new CreateProductOrderController(useCase);
 
-        await createProductOrderController.handle(requestMock, responseMock);
+        await controller.handle(requestMock, responseMock);
 
         expect(responseMock.statusCode).toBe(400);
-        expect(responseMock.data).toEqual({ error: "A quantidade do pedido deve ser maior que zero." });
+        expect(responseMock.data).toEqual({
+            error: "A quantidade do pedido deve ser maior que zero."
+        });
     });
+
 });
