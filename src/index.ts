@@ -1,37 +1,27 @@
 import fastify from "fastify";
+import { Product } from "./entities/Product";
 import { SqliteConnection } from "./repositories/SqliteConnection";
 import { ProductRepository } from "./repositories/ProductRepository";
-import { ProductOrderRepository } from "./repositories/ProductOrderRepository";
-
+import { InfrastructureError } from "./InfrastructureError";
 import { CreateProductUsecase } from "./usecases/CreateProductUsecase";
-import { CreateProductOrderUsecase } from "./usecases/CreateProductOrderUsecase";
-
 import { CreateProductController } from "./controllers/CreateProductController";
 import { CreateProductOrderController } from "./controllers/CreateProductOrderController";
+import { ProductOrderRepository } from "./repositories/ProductOrderRepository";
+import { CreateProductOrderUsecase } from "./usecases/CreateProductOrderUsecase";
 
-// Instanciação da infraestrutura de banco de dados
 const sqliteConnection = new SqliteConnection("db/estoque.sqlite");
-
-// Instanciação de Repositórios aplicando inversão de dependência
 const productRepository = new ProductRepository(sqliteConnection);
 const productOrderRepository = new ProductOrderRepository(sqliteConnection);
-
-// Instanciação de Casos de Uso
 const createProductUsecase = new CreateProductUsecase(productRepository);
 const createProductOrderUsecase = new CreateProductOrderUsecase(productRepository, productOrderRepository);
-
-// Instanciação de Adaptadores de Interface (Controllers)
 const createProductController = new CreateProductController(createProductUsecase);
 const createProductOrderController = new CreateProductOrderController(createProductOrderUsecase);
 
 const app = fastify();
 
-// Declaração de Rotas da API
-app.post("/products", async (request, reply) => { 
-    await createProductController.handle(request, reply); 
-});
+app.post("/products", async (request, reply) => { await createProductController.handle(request, reply); });
 
-app.post("/product-orders", async (request, reply) => { 
+app.post("/products/orders", async (request, reply) => { 
     await createProductOrderController.handle(request, reply); 
 });
 
