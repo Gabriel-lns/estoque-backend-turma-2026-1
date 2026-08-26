@@ -25,6 +25,7 @@ import { GetProductController } from "./controllers/GetProductController";
 import { GetAllProductOrdersController } from "./controllers/GetAllProductOrdersController";
 import { GetProductOrderController } from "./controllers/GetProductOrderController";
 import { CreateProductOutputController } from "./controllers/CreateProductOutputController";
+import { DeleteProductOutputController } from "./controllers/DeleteProductOutputController";
 
 
 // Instanciação da infraestrutura de banco de dados
@@ -57,6 +58,7 @@ const getAllProductOrdersController = new GetAllProductOrdersController(getAllPr
 const getProductOrderController = new GetProductOrderController(getProductOrderUsecase);
 const deleteProductInputController = new DeleteProductInputController(deleteProductInputUsecase);
 const createProductOutputController = new CreateProductOutputController(createProductOutputUsecase);
+const deleteProductOutputController = new DeleteProductOutputController();
 
 const app = fastify();
 app.register(cors, {
@@ -98,6 +100,10 @@ app.delete("/product-inputs/:productInputId", async (request, reply) => {
 });
 app.post("/product-outputs", async (request, reply) => { 
     await createProductOutputController.handle(request, reply); 
+});
+
+app.delete("/product-outputs/:productOutputId", async (request, reply) => {
+    await deleteProductOutputController.handle(request, reply);
 });
 
 app.listen({ port: 3000 }, (err, address) => {

@@ -43,7 +43,10 @@ POST http://localhost:3000/product-outputs HTTP/1.1
 Content-Type: application/json
 
 {
-  "barcode": "123412112",
+  "barcode": "1787703277884",
   "quantity": 2,
   "outputDate": "2026-05-25T19:00:00Z"
 }
+
+### Apaga uma Saída de Pedido
+DELETE http://localhost:3000/product-outputs/77dacdcc-5d75-4a35-b305-6f606e2c47de HTTP/1.1
