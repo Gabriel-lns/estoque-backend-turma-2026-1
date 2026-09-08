@@ -1,46 +1,25 @@
-import type { FastifyRequest, FastifyReply } from "fastify";
-import Database from "better-sqlite3";
-
+import type { FastifyReply, FastifyRequest } from "fastify";
+import { InfrastructureError } from "../InfrastructureError";
+import type { DeleteProductOutputUsecaseInterface } from "../usecases/DeleteProductOutputUsecase";
 
 export class DeleteProductOutputController {
-    public async handle(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
-        const { productOutputId } = request.params as { productOutputId: string; };
+    constructor(private readonly deleteProductOutputUsecase: DeleteProductOutputUsecaseInterface) {}
 
-        if (!productOutputId) {
-            return response.status(400).send({ error: "Product output ID is required" });
+    public async handle(request: FastifyRequest, response: FastifyReply): Promise<void> {
+        const { productOutputId } = request.params as { productOutputId?: string };
+        const result = this.deleteProductOutputUsecase.execute(productOutputId ?? "");
+
+        // Mapeia erro de banco para 500
+        if (result instanceof InfrastructureError) {
+            return response.status(500).send({ error: result.message });
         }
 
-        try {
-            const connection = new Database("db/estoque.sqlite");
-
-            const statement1 = connection.prepare("SELECT * FROM product_outputs WHERE id = ?");
-            const productOutput = statement1.get(productOutputId) as { id: string; product_id: string; quantity: number; output_date: string } | undefined;
-
-            if (!productOutput) {
-                return response.status(404).send({ error: "Product output not found" });
-            }
-
-            const statement2 = connection.prepare("SELECT * FROM products WHERE barcode = ?");
-            const product = statement2.get(productOutput.product_id) as { barcode: string; name: string; quantity_in_stock: number } | undefined;
-
-            if (!product) {
-                return response.status(404).send({ error: "Product not found" });
-            }            
-
-            const stock = product.quantity_in_stock;
-
-            const deleteStatement = connection.prepare("DELETE FROM product_outputs WHERE id = ?");
-            deleteStatement.run(productOutputId);
-
-            const newStock = stock + productOutput.quantity;
-
-            const updateProductStatement = connection.prepare("UPDATE products SET quantity_in_stock = ? WHERE barcode = ?");
-            updateProductStatement.run(newStock, product.barcode);
-
-            return response.status(200).send({ message: "Product output deleted successfully" });
-
-        } catch (error) {
-            return response.status(500).send({ error: "Internal server error" });
+        // Mapeia 404 para nao encontrado e 400 para erro de parametro
+        if (result instanceof Error) {
+            const status = (result.message === "Product output not found" || result.message === "Product not found") ? 404 : 400;
+            return response.status(status).send({ error: result.message });
         }
+
+        return response.status(200).send({ message: "Product output deleted successfully" });
     }
 }

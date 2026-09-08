@@ -15,6 +15,7 @@ import { GetProductUsecase } from "./usecases/GetProductUsecase";
 import { GetAllProductOrdersUsecase } from "./usecases/GetAllProductOrdersUsecase";
 import { GetProductOrderUsecase } from "./usecases/GetProductOrderUsecase";
 import { CreateProductOutputUsecase } from "./usecases/CreateProductOutputUsecase";
+import { DeleteProductOutputUsecase } from "./usecases/DeleteProductOutputUsecase";
 
 import { CreateProductController } from "./controllers/CreateProductController";
 import { CreateProductOrderController } from "./controllers/CreateProductOrderController";
@@ -47,6 +48,7 @@ const getAllProductOrdersUsecase = new GetAllProductOrdersUsecase(productOrderRe
 const getProductOrderUsecase = new GetProductOrderUsecase(productOrderRepository);
 const deleteProductInputUsecase = new DeleteProductInputUsecase(productInputRepository,productOrderRepository,productRepository);
 const createProductOutputUsecase = new CreateProductOutputUsecase(productRepository, productOutputRepository);
+const deleteProductOutputUsecase = new DeleteProductOutputUsecase(productOutputRepository, productRepository);
 
 // Instanciação de Adaptadores de Interface (Controllers)
 const createProductController = new CreateProductController(createProductUsecase);
@@ -58,7 +60,7 @@ const getAllProductOrdersController = new GetAllProductOrdersController(getAllPr
 const getProductOrderController = new GetProductOrderController(getProductOrderUsecase);
 const deleteProductInputController = new DeleteProductInputController(deleteProductInputUsecase);
 const createProductOutputController = new CreateProductOutputController(createProductOutputUsecase);
-const deleteProductOutputController = new DeleteProductOutputController();
+const deleteProductOutputController = new DeleteProductOutputController(deleteProductOutputUsecase);
 
 const app = fastify();
 app.register(cors, {

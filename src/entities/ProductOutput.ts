@@ -29,6 +29,16 @@ export class ProductOutput {
         return new ProductOutput(crypto.randomUUID(), product, quantity, outputDate);
     }
 
+    // Reconstitui a entidade vinda do banco de dados
+    public static rebuild(
+        id: string,
+        product: Product,
+        quantity: number,
+        outputDate: Date,
+    ): ProductOutput {
+        return new ProductOutput(id, product, quantity, outputDate);
+    }
+
     public getId(): string {
         return this.id;
     }
